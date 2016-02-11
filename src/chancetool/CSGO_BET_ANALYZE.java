@@ -15,13 +15,65 @@ public class CSGO_BET_ANALYZE {
 	
 	
 
-	public static void main(String[] args) {
+	public static void main(String[] args) 
+	{
+		getEventGroupMatches();
+		getEventPostGroupMatches();
+		
+	}
+	
+	//TODO: add string parameter to choose event
+	/**
+	 * 
+	 */
+	static void getEventGroupMatches()
+	{
+		Document doc;
+		try {
+			doc = Jsoup.connect("http://wiki.teamliquid.net/counterstrike/ESL/Major_Series_One/2014/Katowice").get();
+			Elements info = doc.select(".match-row");
+			
+			for(Element e: info)
+			{
+				String to_split = e.text();
+				String[] tokens = to_split.split(" +");
+				
+				to_split = to_split.replace(tokens[0], "");
+				to_split = to_split.replace(tokens[tokens.length-1], "");
+				tokens = to_split.split(" +");
+				
+				//TODO: parse match results, beginning and end of string, time and map details
+				System.out.println(to_split);
+			}
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
+	}
+	
+	
+	//TODO: add string parameter to choose event
+	/**
+	 * 
+	 */
+	static void getEventPostGroupMatches()
+	{
 		Document doc;
 		try {
 			doc = Jsoup.connect("http://wiki.teamliquid.net/counterstrike/ESL/Major_Series_One/2014/Katowice").get();
 			
 			//Selects all the games played after group stages
 			Elements elements = doc.body().select(".bracket-game");
+			
+			//TEST
+			Elements group_c_elements = doc.select("#collapsibleTable1");
+			for (Element element : group_c_elements) 
+			{
+				System.out.println(element.text());
+			}
+
+			
 			//Selects all teams participating in this tournament
 			Elements teamname_elements = doc.body().select(".teamcard");
 
@@ -96,7 +148,7 @@ public class CSGO_BET_ANALYZE {
 			    	
 			    	if(element_inner.className().equals("bracket-game-details"))
 			    	{
-			    		System.out.println(element_inner.className());
+			    		//System.out.println(element_inner.className());
 			    		Elements game_deets = element_inner.children();
 			    		
 			    		//Used to figure out what detail about the match it is on, only 1 and 2 are relevant
@@ -112,7 +164,8 @@ public class CSGO_BET_ANALYZE {
 					    	if(counter == 1)
 					    	{
 					    		//System.out.println("NUMBER: " + counter);
-					    		System.out.println("MATCH TIME: " + details.text());
+					    		//TODO
+					    		//System.out.println("MATCH TIME: " + details.text());
 					    		temp_game.setTime(details.text());
 					    	}
 					    	
@@ -120,7 +173,8 @@ public class CSGO_BET_ANALYZE {
 					    	else if(counter > 1 && details.className().length() == 0)
 					    	{
 					    		//System.out.println("NUMBER: " + counter);
-					    		System.out.println("MATCH RESULTS: ");
+					    		//TODO:
+					    		//System.out.println("MATCH RESULTS: ");
 					    		
 					    		Elements match_details = details.children();
 					    		for(Element fine: match_details)
@@ -149,8 +203,8 @@ public class CSGO_BET_ANALYZE {
 							    		
 							    		temp_game.setMap(temp_map);
 							    		
-							    		
-						    			System.out.println(to_split);
+							    		//TODO:
+						    			//System.out.println(to_split);
 						    		}
 					    		}
 					    	}
@@ -250,8 +304,6 @@ public class CSGO_BET_ANALYZE {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} 
-		
-
 	}
 
 }
