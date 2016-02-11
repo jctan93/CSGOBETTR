@@ -12,8 +12,8 @@ public class Team {
 	
 	/**
 	 * CONSTRUCTOR
-	 * @param teamname
-	 * @param Players
+	 * @param teamname Team name in String format
+	 * @param Players input expected is an ArrayList of players
 	 */
 	public Team(String teamname, ArrayList<String> Players)
 	{
@@ -30,11 +30,19 @@ public class Team {
 		rating = 0.0;
 	}
 	
+	/**
+	 * 
+	 * @param teamname Enter Team name in String format
+	 */
 	public void addTeamName(String teamname)
 	{
 		name_of_team = teamname;
 	}
 	
+	/**
+	 * 
+	 * @param playername Enter Player name in String format
+	 */
 	public void addTeamPlayer(String playername)
 	{
 		activePlayers.add(playername);

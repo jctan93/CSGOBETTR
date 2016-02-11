@@ -8,6 +8,7 @@ public class Game
 	private int a_score;
 	private int b_score;
 	private int map_no;
+	private String stage;
 	
 	//Max possible maps is 5, Best of 5 (BO5), however games are usually a BO3
 	private Map one;
@@ -26,6 +27,11 @@ public class Game
 		map_no = 1;
 	}
 	
+	/**
+	 * 
+	 * @param tem Team Object to be set
+	 * @param teamname String deciding whether it's Team A or Team B
+	 */
 	public void setTeam(Team tem, String teamname)
 	{
 		if(teamname.equals("A") || teamname.equals("a"))
@@ -47,6 +53,15 @@ public class Game
 	public void setTime(String taim)
 	{
 		time = taim;
+	}
+	
+	/**
+	 * 
+	 * @param which_stage Enter a string: Group or post_group
+	 */
+	public void setStage(String which_stage)
+	{
+		stage = which_stage;
 	}
 	
 	/**

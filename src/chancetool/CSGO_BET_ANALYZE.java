@@ -17,8 +17,8 @@ public class CSGO_BET_ANALYZE {
 
 	public static void main(String[] args) 
 	{
-		getEventGroupMatches();
-		getEventPostGroupMatches();
+		//getEventGroupMatches();
+		getEventDetails();
 		
 	}
 	
@@ -37,13 +37,52 @@ public class CSGO_BET_ANALYZE {
 			{
 				String to_split = e.text();
 				String[] tokens = to_split.split(" +");
+				String team_a = tokens[0];
+				String team_b = tokens[tokens.length-1];
 				
+				//REMOVES TEAM NAMES FROM STRING
 				to_split = to_split.replace(tokens[0], "");
 				to_split = to_split.replace(tokens[tokens.length-1], "");
-				tokens = to_split.split(" +");
+				tokens = to_split.trim().split(" +");
+				int tokens_length = tokens.length;
 				
-				//TODO: parse match results, beginning and end of string, time and map details
-				System.out.println(to_split);
+				//TODO: parse match results, beginning and end of string, time[actually screw the time] and map details
+				int a_score = Integer.parseInt(tokens[0]);
+				int b_score = Integer.parseInt(tokens[tokens_length-1]);
+				
+				//REMOVES TEAM SCORES FROM STRING
+				to_split = to_split.replace(tokens[0], "");
+				to_split = to_split.replace(tokens[tokens.length-1], "");
+				tokens = to_split.trim().split(" +");
+				tokens_length = tokens.length;
+				//System.out.println(to_split);
+				
+				//Since there are 4 spaces of whitespace before the map name, the name is 
+				//the concatenation of everything starting from the back of the array
+				//until you hit multiple characters that are the same {for some reason, I can't remove the whitespace]
+				int z = tokens_length-1;
+				String map_name = tokens[z];
+				while(z > -1)
+				{
+					String to_compare = tokens[z-1];
+					//String to_check = StringUtils.deleteWhitespace(to_compare);
+					//String test = " ";
+					//String to_test = StringUtils.deleteWhitespace(test);
+					if( !to_compare.equals(tokens[z-2]))
+					{
+						map_name = tokens[z-1].concat(map_name);
+						z--;
+					}
+					else break;
+				}
+				
+				//Sets map details
+				Map temp_group_match = new Map();
+				temp_group_match.setMapName(map_name);
+				temp_group_match.setRounds(a_score, "a");
+				temp_group_match.setRounds(b_score, "b");
+				
+				//Since the names are abbreviated, we need to find the actual matching team_names
 			}
 			
 		} catch (IOException e) {
@@ -57,27 +96,23 @@ public class CSGO_BET_ANALYZE {
 	/**
 	 * 
 	 */
-	static void getEventPostGroupMatches()
+	static void getEventDetails()
 	{
 		Document doc;
 		try {
 			doc = Jsoup.connect("http://wiki.teamliquid.net/counterstrike/ESL/Major_Series_One/2014/Katowice").get();
-			
+			ArrayList<Team> all_teams = new ArrayList<Team>();
 			//Selects all the games played after group stages
 			Elements elements = doc.body().select(".bracket-game");
-			
-			//TEST
-			Elements group_c_elements = doc.select("#collapsibleTable1");
-			for (Element element : group_c_elements) 
-			{
-				System.out.println(element.text());
-			}
 
-			
 			//Selects all teams participating in this tournament
 			Elements teamname_elements = doc.body().select(".teamcard");
+			
+			Elements group_stages = doc.select(".match-row");
 
-			ArrayList<Team> all_teams = new ArrayList<Team>();
+			ArrayList<Game> all_games = new ArrayList<Game>();
+			
+			
 			
 			
 			//PRINT PARTICIPATING TEAMS TEST
@@ -135,6 +170,122 @@ public class CSGO_BET_ANALYZE {
 				    
 			}
 			
+			//TODO: GROUP MATCHES
+			//GROUP STAGE MATCHES
+			for(Element e: group_stages)
+			{
+				String to_split = e.text();
+				String[] tokens = to_split.split(" +");
+				String team_a = tokens[0];
+				String team_b = tokens[tokens.length-1];
+				
+				//REMOVES TEAM NAMES FROM STRING
+				to_split = to_split.replace(tokens[0], "");
+				to_split = to_split.replace(tokens[tokens.length-1], "");
+				tokens = to_split.trim().split(" +");
+				int tokens_length = tokens.length;
+				
+				//TODO: parse match results, beginning and end of string, time[actually screw the time] and map details
+				int a_score = Integer.parseInt(tokens[0]);
+				int b_score = Integer.parseInt(tokens[tokens_length-1]);
+				
+				//REMOVES TEAM SCORES FROM STRING
+				to_split = to_split.replace(tokens[0], "");
+				to_split = to_split.replace(tokens[tokens.length-1], "");
+				tokens = to_split.trim().split(" +");
+				tokens_length = tokens.length;
+				//System.out.println(to_split);
+				
+				//Since there are 4 spaces of whitespace before the map name, the name is 
+				//the concatenation of everything starting from the back of the array
+				//until you hit multiple characters that are the same {for some reason, I can't remove the whitespace]
+				int z = tokens_length-1;
+				String map_name = tokens[z];
+				while(z > -1)
+				{
+					String to_compare = tokens[z-1];
+					//String to_check = StringUtils.deleteWhitespace(to_compare);
+					//String test = " ";
+					//String to_test = StringUtils.deleteWhitespace(test);
+					if( !to_compare.equals(tokens[z-2]))
+					{
+						map_name = tokens[z-1].concat(map_name);
+						z--;
+					}
+					else break;
+				}
+				
+				//Sets map details
+				Map temp_group_match = new Map();
+				temp_group_match.setMapName(map_name);
+				temp_group_match.setRounds(a_score, "a");
+				temp_group_match.setRounds(b_score, "b");
+				
+				//Since the names are abbreviated, we need to find the actual matching team_names
+				//TODO: CLEAN UP
+				/*
+				for(Team compare_team: all_teams)
+				{
+					String name_to_compare = compare_team.getName();
+					int abbreviated_start = 0;
+					int compare_pos = 0;
+					//Numbers of letters that match, possible that it's not a 100% match eg. mouz, mousesports
+					int no_of_matches = 0;
+					
+					while(abbreviated_start != (team_a.length()) && compare_pos != (name_to_compare.length()))
+					{
+						if(	team_a.charAt(abbreviated_start) == name_to_compare.charAt(compare_pos)	)
+						{
+							abbreviated_start++;
+							no_of_matches++;
+						}
+						compare_pos++;
+					}
+					
+					//Percentage of chars that match
+					double hit_rate = (double)no_of_matches/(double)team_a.length();
+					if(	hit_rate > 0.75)
+					{
+						team_a = name_to_compare;
+					}
+					
+				}
+				*/
+				team_a = compareNames(team_a.replaceAll("[^A-Za-z0-9]", ""), all_teams);
+				team_b = compareNames(team_b.replaceAll("[^A-Za-z0-9]", ""), all_teams);
+				
+				//Set teams for the map
+				temp_group_match.setTeam(team_a, "a");
+				temp_group_match.setTeam(team_b, "b");
+				
+				
+				Game temp_game = new Game();
+				temp_game.setMap(temp_group_match);
+				
+				//Set teams for the game
+				for(Team to_add_team: all_teams)
+				{
+					if(to_add_team.getName().equals(team_a))
+					{
+						temp_game.setTeam(to_add_team, "a");
+					}
+				}
+				
+				for(Team to_add_team: all_teams)
+				{
+					if(to_add_team.getName().equals(team_b))
+					{
+						temp_game.setTeam(to_add_team, "b");
+					}
+				}
+				
+				temp_game.setScore(temp_group_match.getRounds("a"), "a");
+				temp_game.setScore(temp_group_match.getRounds("b"), "b");
+				temp_game.setStage("group");
+				//System.out.println("TEAM A: "+ team_a);
+				//System.out.println("TEAM B: "+ team_b);
+				all_games.add(temp_game);
+			}
 			
 			//PRINT BRACKET GAME TEST
 			for (Element element : elements) 
@@ -212,7 +363,7 @@ public class CSGO_BET_ANALYZE {
 					    	counter++;
 			    		}
 			    		
-			    		System.out.println();
+			    		//System.out.println();
 			    	}
 			    	
 			    	//Sets Teams and score of each team
@@ -295,15 +446,53 @@ public class CSGO_BET_ANALYZE {
 			    	
 			    	j++;
 			    }
-			    
-			    
-			    System.out.println();
+			    temp_game.setStage("post_group");
+			    all_games.add(temp_game);
+			   
 			}
+			System.out.println();
 			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} 
+	}
+	
+	//TODO: DESCRIBE HELPER METHOD
+	static String compareNames(String team, ArrayList<Team> all_teams)
+	{
+		for(Team compare_team: all_teams)
+		{
+			String name_to_compare = compare_team.getName().toLowerCase();
+			int abbreviated_start = 0;
+			int compare_pos = 0;
+			//Numbers of letters that match, possible that it's not a 100% match eg. mouz, mousesports
+			int no_of_matches = 0;
+			
+			//Compares each char in the abbreviated name to the full team names and tries to find a pattern
+			while(abbreviated_start != (team.length()) && compare_pos != (name_to_compare.length()))
+			{
+				if(	team.toLowerCase().charAt(abbreviated_start) == name_to_compare.charAt(compare_pos)	)
+				{
+					abbreviated_start++;
+					no_of_matches++;
+				}
+				compare_pos++;
+			}
+			
+			
+			//Percentage of chars that match
+			double hit_rate = (double)no_of_matches/(double)team.length();
+			if(	hit_rate >= 0.75)
+			{
+				team = compare_team.getName();
+				return team;
+			}
+			
+			
+		}
+		
+		return "";
 	}
 
 }
