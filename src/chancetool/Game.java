@@ -165,4 +165,28 @@ public class Game
 		return toreturn;
 	}
 	
+	/**
+	 * 
+	 * @param which_team enter a or b
+	 * @return
+	 */
+	public Team getTeam(String which_team)
+	{
+		Team to_return  = new Team();
+		switch (which_team)
+		{
+		case "a": to_return = A;
+					break;
+		case "A": to_return = A;
+					break;
+		case "b": to_return = B;
+					break;
+		case "B": to_return = B;
+					break;
+		}
+		
+		
+		return to_return;
+	}
+	
 }

@@ -76,7 +76,7 @@ public class Event
 	/**
 	 * 
 	 * @param stage String detailing which stage the games belong to
-	 * 		  values are: group_a, group_b, group_c, group_d, post_group
+	 * 		  values are: a, b, c, d, post_group
 	 * @param games_to_add
 	 */
 	public void addGames(String stage, ArrayList<Game> games_to_add)

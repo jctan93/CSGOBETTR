@@ -2,6 +2,7 @@ package chancetool;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Calendar;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
@@ -13,16 +14,89 @@ import org.jsoup.select.Elements;
 
 public class CSGO_BET_ANALYZE {
 	
-	
+	//TODO: PARSE ALL EVENT NAMES, FIGURE OUT HOW TO STOP AT 2013 EVENTS, THEN SAVE THEM
 
 	public static void main(String[] args) 
 	{
+		Document doc;
+		try
+		{
+			doc = Jsoup.connect("http://wiki.teamliquid.net/counterstrike/Premier_Tournaments").get();
+			//Elements event_name_rows = doc.select("table.sortable.wikitable.smwtable.jquery-tablesorter").select("tbody").select("tr").select("td").select("a[href]");
+			Elements event_name_rows = doc.select("table.sortable.wikitable.smwtable.jquery-tablesorter").select("tbody").select("tr");
+			Elements table_2012 = doc.select("table.sortable.wikitable.smwtable.jquery-tablesorter");
+			
+			int year = Calendar.getInstance().get(Calendar.YEAR);
+			
+			//We only want to get tournaments held >= the year 2013, CSGO ONLY tourneys
+			int no_of_tables_toread = year - 2012;
+			Element events_in2012 = table_2012.get(no_of_tables_toread);
+			Elements list_of_2012_events = events_in2012.select("tr").select("td").select("a[href]");
+			String last_event_2012 = list_of_2012_events.first().text();
+			
+			for(Element row : event_name_rows)
+			{
+				//Gets the elements in column 3 since it is the Name column
+				Elements col = row.getElementsByIndexEquals(2);
+				String to_print = col.last().text();
+				
+				//Only parses till the very first event of 2013
+				if(to_print.equals(last_event_2012))
+				{
+					break;
+				}
+				
+				//Ignores the first row since it is just the header
+				if(!row.equals(event_name_rows.get(0)))
+				{
+					Element link = row.select("a").first();
+					String link_string = link.attr("abs:href");
+					System.out.println(to_print);
+				}
+					
+
+			}
+			
+			/*
+			//TODO: Save all names in an array and create a new one which consists of every other name starting at 0
+			ArrayList<String> temp_names = new ArrayList<String>();
+			int counter = 0;
+			for(Element event_name : event_name_rows)
+			{
+				String names_of_events = event_name.text();
+				if(!StringUtils.isBlank(names_of_events))
+				{
+					System.out.println(names_of_events);
+					if(names_of_events.equals(last_event_2012))
+					{
+						break;
+					}
+					
+					if(counter%2 == 0)
+					{
+						temp_names.add(names_of_events);
+					}
+					
+
+					counter++;
+				}
+			}
+			*/
+			
+			
+			
+		}
+		catch (IOException e) 
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
 		//getEventGroupMatches();
 		getEventDetails();
 		
 	}
 	
-	//TODO: add string parameter to choose event
+	//TODO: dummy test method
 	/**
 	 * 
 	 */
@@ -31,58 +105,13 @@ public class CSGO_BET_ANALYZE {
 		Document doc;
 		try {
 			doc = Jsoup.connect("http://wiki.teamliquid.net/counterstrike/ESL/Major_Series_One/2014/Katowice").get();
-			Elements info = doc.select(".match-row");
+			Elements info = doc.select("table.oldtable.table.table-bordered.grouptable");
 			
+			info.size();
 			for(Element e: info)
 			{
 				String to_split = e.text();
-				String[] tokens = to_split.split(" +");
-				String team_a = tokens[0];
-				String team_b = tokens[tokens.length-1];
-				
-				//REMOVES TEAM NAMES FROM STRING
-				to_split = to_split.replace(tokens[0], "");
-				to_split = to_split.replace(tokens[tokens.length-1], "");
-				tokens = to_split.trim().split(" +");
-				int tokens_length = tokens.length;
-				
-				//TODO: parse match results, beginning and end of string, time[actually screw the time] and map details
-				int a_score = Integer.parseInt(tokens[0]);
-				int b_score = Integer.parseInt(tokens[tokens_length-1]);
-				
-				//REMOVES TEAM SCORES FROM STRING
-				to_split = to_split.replace(tokens[0], "");
-				to_split = to_split.replace(tokens[tokens.length-1], "");
-				tokens = to_split.trim().split(" +");
-				tokens_length = tokens.length;
-				//System.out.println(to_split);
-				
-				//Since there are 4 spaces of whitespace before the map name, the name is 
-				//the concatenation of everything starting from the back of the array
-				//until you hit multiple characters that are the same {for some reason, I can't remove the whitespace]
-				int z = tokens_length-1;
-				String map_name = tokens[z];
-				while(z > -1)
-				{
-					String to_compare = tokens[z-1];
-					//String to_check = StringUtils.deleteWhitespace(to_compare);
-					//String test = " ";
-					//String to_test = StringUtils.deleteWhitespace(test);
-					if( !to_compare.equals(tokens[z-2]))
-					{
-						map_name = tokens[z-1].concat(map_name);
-						z--;
-					}
-					else break;
-				}
-				
-				//Sets map details
-				Map temp_group_match = new Map();
-				temp_group_match.setMapName(map_name);
-				temp_group_match.setRounds(a_score, "a");
-				temp_group_match.setRounds(b_score, "b");
-				
-				//Since the names are abbreviated, we need to find the actual matching team_names
+				System.out.println(to_split);
 			}
 			
 		} catch (IOException e) {
@@ -104,14 +133,25 @@ public class CSGO_BET_ANALYZE {
 			ArrayList<Team> all_teams = new ArrayList<Team>();
 			//Selects all the games played after group stages
 			Elements elements = doc.body().select(".bracket-game");
-
+			
 			//Selects all teams participating in this tournament
 			Elements teamname_elements = doc.body().select(".teamcard");
 			
+			//Selects info about group stage matches
 			Elements group_stages = doc.select(".match-row");
+			
+			//Size of this is the number of groups
+			Elements info = doc.select("table.oldtable.table.table-bordered.grouptable");
+			
+			//Name of event
+			Elements event_name_info = doc.select("firstHeading");
+			String name_of_event = event_name_info.text();
 
 			ArrayList<Game> all_games = new ArrayList<Game>();
 			
+			//Creates new event object and sets the name of the event
+			Event event_toreturn = new Event();
+			event_toreturn.setEventName(name_of_event);
 			
 			
 			
@@ -170,6 +210,9 @@ public class CSGO_BET_ANALYZE {
 				    
 			}
 			
+			//Sets the teams participating in the event
+			event_toreturn.setTeams(all_teams);
+			
 			//TODO: GROUP MATCHES
 			//GROUP STAGE MATCHES
 			for(Element e: group_stages)
@@ -222,35 +265,6 @@ public class CSGO_BET_ANALYZE {
 				temp_group_match.setRounds(b_score, "b");
 				
 				//Since the names are abbreviated, we need to find the actual matching team_names
-				//TODO: CLEAN UP
-				/*
-				for(Team compare_team: all_teams)
-				{
-					String name_to_compare = compare_team.getName();
-					int abbreviated_start = 0;
-					int compare_pos = 0;
-					//Numbers of letters that match, possible that it's not a 100% match eg. mouz, mousesports
-					int no_of_matches = 0;
-					
-					while(abbreviated_start != (team_a.length()) && compare_pos != (name_to_compare.length()))
-					{
-						if(	team_a.charAt(abbreviated_start) == name_to_compare.charAt(compare_pos)	)
-						{
-							abbreviated_start++;
-							no_of_matches++;
-						}
-						compare_pos++;
-					}
-					
-					//Percentage of chars that match
-					double hit_rate = (double)no_of_matches/(double)team_a.length();
-					if(	hit_rate > 0.75)
-					{
-						team_a = name_to_compare;
-					}
-					
-				}
-				*/
 				team_a = compareNames(team_a.replaceAll("[^A-Za-z0-9]", ""), all_teams);
 				team_b = compareNames(team_b.replaceAll("[^A-Za-z0-9]", ""), all_teams);
 				
@@ -286,6 +300,19 @@ public class CSGO_BET_ANALYZE {
 				//System.out.println("TEAM B: "+ team_b);
 				all_games.add(temp_game);
 			}
+			
+			//TODO: Split group matches into their respective groups, assumes that there are only 4 groups
+			int matches_per_group  = all_games.size() / info.size(); 
+			int inner = 0;
+			
+			
+			event_toreturn.setGroup("a", splitGroup(all_games, inner,matches_per_group));
+			inner+=matches_per_group;
+			event_toreturn.setGroup("b", splitGroup(all_games, inner,matches_per_group));
+			inner+=matches_per_group;
+			event_toreturn.setGroup("c", splitGroup(all_games, inner,matches_per_group));
+			inner+=matches_per_group;
+			event_toreturn.setGroup("d", splitGroup(all_games, inner,matches_per_group));
 			
 			//PRINT BRACKET GAME TEST
 			for (Element element : elements) 
@@ -493,6 +520,26 @@ public class CSGO_BET_ANALYZE {
 		}
 		
 		return "";
+	}
+	
+	/**
+	 * Helper method to split all_teams into their respective groups
+	 * @param all_teams
+	 * @param start_pos
+	 * @param matches_per_group
+	 * @return
+	 */
+	static ArrayList<Team> splitGroup(ArrayList<Game> all_games, int start_pos, int matches_per_group)
+	{
+		ArrayList<Team> to_return = new ArrayList<Team>();
+		
+		for(int i = start_pos ; i < start_pos+2; i++)
+		{
+			to_return.add(all_games.get(i).getTeam("a"));
+			to_return.add(all_games.get(i).getTeam("b"));
+		}
+		
+		return to_return;
 	}
 
 }
