@@ -66,6 +66,15 @@ public class Game
 	
 	/**
 	 * 
+	 * @return String detailing whether it is a group or post_group match
+	 */
+	public String getStage()
+	{
+		return stage;
+	}
+	
+	/**
+	 * 
 	 * @param score Score for a particular team
 	 * @param team	Self explanatory
 	 */

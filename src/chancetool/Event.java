@@ -14,6 +14,7 @@ public class Event
 	private ArrayList<Team> group_d;
 	
 	private HashMap<String, ArrayList<Game>> games;
+	private ArrayList<Game> all_games;
 	
 	public Event(String name_of_event)
 	{
@@ -44,6 +45,21 @@ public class Event
 		event_name = name_of_event;
 	}
 	
+	public void setAllGames(ArrayList<Game> games)
+	{
+		all_games = games;
+	}
+	
+	public ArrayList<Game> getAllGames()
+	{
+		return all_games;
+	}
+	
+	/**
+	 * Method to set the teams in each group for the group phase
+	 * @param group Letter representing group, a/b/c/d
+	 * @param teams ArrayList of all Teams in the group
+	 */
 	public void setGroup(String group, ArrayList<Team> teams)
 	{
 		switch (group)
@@ -68,6 +84,10 @@ public class Event
 		}
 	}
 	
+	/**
+	 * Method to set participating teams
+	 * @param teams_to_add ArrayList of Team objects containing all the teams taking part
+	 */
 	public void setTeams(ArrayList<Team> teams_to_add)
 	{
 		participating_teams = teams_to_add;
@@ -76,7 +96,7 @@ public class Event
 	/**
 	 * 
 	 * @param stage String detailing which stage the games belong to
-	 * 		  values are: a, b, c, d, post_group
+	 * 		  values are: group_a, group_b, group_c, group_d, post_group
 	 * @param games_to_add
 	 */
 	public void addGames(String stage, ArrayList<Game> games_to_add)
