@@ -30,7 +30,7 @@ public class Game
 	/**
 	 * 
 	 * @param tem Team Object to be set
-	 * @param teamname String deciding whether it's Team A or Team B
+	 * @param teamname String either a or b
 	 */
 	public void setTeam(Team tem, String teamname)
 	{

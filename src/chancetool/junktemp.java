@@ -256,4 +256,78 @@ public class junktemp {
 	   
 	}
 
+	
+	//Sets the teams participating in the event
+	event_toreturn.setTeams(all_teams);
+	
+	//TODO: GROUP MATCHES Fix broken messy code
+	//GROUP STAGE MATCHES
+	for(Element e: group_stages)
+	{
+		Element map_name_element = e.child(1).child(0).child(2).child(0).child(4);
+		Element team_a_score = e.child(1);
+		String teamascore_string = team_a_score.ownText().trim();
+		
+		Elements group_row_results = e.select(".matchlistslot");
+		
+		String map_name = map_name_element.text();
+		String to_split = e.text();
+		String[] tokens = to_split.split(" +");
+		String team_a = tokens[0];
+		String team_b = tokens[tokens.length-1];
+		
+		//REMOVES TEAM NAMES FROM STRING
+		to_split = to_split.replace(tokens[0], "");
+		to_split = to_split.replace(tokens[tokens.length-1], "");
+		tokens = to_split.trim().split(" +");
+		int tokens_length = tokens.length;
+		
+		//TODO: parse match results, beginning and end of string, time[actually screw the time] and map details
+		int a_score = Integer.parseInt(tokens[0]);
+		int b_score = Integer.parseInt(tokens[tokens_length-1]);
+		
+		//Sets map details
+		Map temp_group_match = new Map();
+		temp_group_match.setMapName(map_name);
+		temp_group_match.setRounds(a_score, "a");
+		temp_group_match.setRounds(b_score, "b");
+		
+		//Since the names are abbreviated, we need to find the actual matching team_names
+		team_a = compareNames(team_a.replaceAll("[^A-Za-z0-9]", ""), all_teams);
+		team_b = compareNames(team_b.replaceAll("[^A-Za-z0-9]", ""), all_teams);
+		
+		//Set teams for the map
+		temp_group_match.setTeam(team_a, "a");
+		temp_group_match.setTeam(team_b, "b");
+		
+		
+		Game temp_game = new Game();
+		temp_game.setMap(temp_group_match);
+		
+		//Set teams for the game
+		for(Team to_add_team: all_teams)
+		{
+			if(to_add_team.getName().equals(team_a))
+			{
+				temp_game.setTeam(to_add_team, "a");
+				break;
+			}
+		}
+		
+		for(Team to_add_team: all_teams)
+		{
+			if(to_add_team.getName().equals(team_b))
+			{
+				temp_game.setTeam(to_add_team, "b");
+				break;
+			}
+		}
+		
+		temp_game.setScore(temp_group_match.getRounds("a"), "a");
+		temp_game.setScore(temp_group_match.getRounds("b"), "b");
+		temp_game.setStage("group");
+		//System.out.println("TEAM A: "+ team_a);
+		//System.out.println("TEAM B: "+ team_b);
+		all_games.add(temp_game);
+	}
 }

@@ -15,6 +15,7 @@ public class Event
 	
 	private HashMap<String, ArrayList<Game>> games;
 	private ArrayList<Game> all_games;
+	private boolean played;
 	
 	public Event(String name_of_event)
 	{
@@ -25,6 +26,7 @@ public class Event
 		group_d = new ArrayList<Team>();
 		
 		games = new HashMap<String, ArrayList<Game>>();
+		played = false;
 	}
 	
 	/**
@@ -38,6 +40,7 @@ public class Event
 		group_d = new ArrayList<Team>();
 		
 		games = new HashMap<String, ArrayList<Game>>();
+		played = false;
 	}
 	
 	public void setEventName(String name_of_event)
@@ -104,6 +107,14 @@ public class Event
 		games.put(stage, games_to_add);
 	}
 	
+	/**
+	 * Sets the status of the event to played
+	 */
+	public void setPlayed()
+	{
+		played = true;
+	}
+	
 
 	/**
 	 * 
@@ -164,5 +175,14 @@ public class Event
 	public ArrayList<Game> getGames(String which_stage)
 	{
 		return games.get(which_stage);
+	}
+	
+	/**
+	 * 
+	 * @return Boolean indicating whether the event has been played
+	 */
+	public boolean getPlayed()
+	{
+		return played;
 	}
 }

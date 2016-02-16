@@ -15,7 +15,6 @@ import org.jsoup.select.Elements;
 
 public class CSGO_BET_ANALYZE {
 	
-	//TODO: PARSE ALL EVENT NAMES, FIGURE OUT HOW TO STOP AT 2013 EVENTS, THEN SAVE THEM
 
 	public static void main(String[] args) 
 	{
@@ -33,7 +32,6 @@ public class CSGO_BET_ANALYZE {
 			Elements table_2012 = doc.select("table.sortable.wikitable.smwtable.jquery-tablesorter");
 			
 			int year = Calendar.getInstance().get(Calendar.YEAR);
-			
 			//We only want to get tournaments held >= the year 2013, CSGO ONLY tourneys
 			int no_of_tables_toread = year - 2012;
 			Element events_in2012 = table_2012.get(no_of_tables_toread);
@@ -98,11 +96,15 @@ public class CSGO_BET_ANALYZE {
 			
 			//getEventGroupMatches();
 
-			//for(String event : events_array)
-			//{
-			//	Event to_store = getEventDetails(events_hashmap.get(event), event);
-			//}
-			Event to_store = getEventDetails(events_hashmap.get(events_array.get(16)), events_array.get(16));
+			for(String event : events_array)
+			{
+				Event to_store = getEventDetails(events_hashmap.get(event), event);
+				if (to_store.getPlayed() == true)
+				{
+					stored_events.add(to_store);
+				}
+			}
+			//Event to_store = getEventDetails(events_hashmap.get(events_array.get(events_array.size()-4)), events_array.get(events_array.size()-4));
 			System.out.println();
 		}
 		catch (IOException e) 
@@ -149,10 +151,26 @@ public class CSGO_BET_ANALYZE {
 		try {
 			doc = Jsoup.connect(event_name_href).get();
 			String yet_tobe_played = doc.body().text();
+			String has_teamcards = doc.body().text().toLowerCase();
 			
-			if(!(yet_tobe_played.toLowerCase().contains("tbd")))
+			Elements has_been_played = doc.body().select(".table-responsive");
+			
+			String tbd = has_been_played.text().toLowerCase();
+			
+			for(Element info_table : has_been_played)
+			{
+				if(info_table.text().contains("tbd"))
+				{
+					tbd = "tbd";
+					break;
+				}
+			}
+			
+			//TODO: MODIFY THIS, TBD could be in a teamcard
+			if(!(tbd.toLowerCase().contains("tbd")))
 			{
 				ArrayList<Team> all_teams = new ArrayList<Team>();
+				HashMap<String, Team> team_hashmap = new HashMap<String,Team>();
 				//Selects all the games played after group stages
 				Elements elements = doc.body().select(".bracket-game");
 				
@@ -176,86 +194,142 @@ public class CSGO_BET_ANALYZE {
 				event_toreturn.setEventName(name_of_event);
 				
 				
-				
-				//PRINT PARTICIPATING TEAMS TEST
-				for (Element element : teamname_elements) 
+				//TODO: Alt version for tournaments missing teamcards, get names from groups instead of teamcards
+				if(has_teamcards.toLowerCase().contains("tournaments missing teamcards"))
 				{
-					 	Elements inner_elements = element.children();
-					 	
-					 	Team temp_team = new Team();
-					 	Boolean addedName = false;
-					 	
-					    for (Element element_inner : inner_elements)
-					    {
-					    	//This if statement covers the player roster
-					    	if((element_inner.className()).equals("wikitable list"))
-					    	{
-					    		Elements rows = element_inner.select("tr");
-					    		
-					    		for (int i = 0; i < rows.size(); i++) 
-					    		{ 
-					    	        Element row = rows.get(i);
-					    	        
-					    	        //Gets rid of the number in front
-					    	        temp_team.addTeamPlayer(row.text().substring(4));
-					    	       // System.out.println(row.text().substring(4));
-					    		}
-					    	}
-					    	
-					    	//If it is a team name and not the player roster
-					    	else if(!addedName)
-					    	{
-					    		//System.out.println(element_inner.text());
-					    		String team_name = element_inner.child(0).text();
-					    		temp_team.addTeamName(team_name);
-					    		addedName = true;
-					    		
-					    		//if(!StringUtils.isBlank(element_inner.className()))
-					    	}
-					    }
-					    
-					    
-					    all_teams.add(temp_team);
-					    /*
-					    for(Team temp: all_teams)
-					    {
-					    	 System.out.println("Team Name: " + temp.getName());
-							    System.out.println("Roster: ");
-							    
-							    for(String player_name : temp.getPlayers())
-							    {
-							    	System.out.println(player_name);
-							    }
-							    
-							    System.out.println();
-					    }
-					   */
-					    
+					System.out.println(event_name + " MISSING TEAMCARDS");
+					Elements teams = info.select("table.oldtable.table.table-bordered.grouptable").select(".team-template-text");
+					for(Element team : teams)
+					{
+						//System.out.println(team.text());
+						Team toadd_team = new Team();
+						toadd_team.addTeamName(team.text());
+						all_teams.add(toadd_team);
+					    team_hashmap.put(toadd_team.getName(), toadd_team);
+					}
 				}
+				
+				else
+				{
+					//PRINT PARTICIPATING TEAMS TEST
+					for (Element element : teamname_elements) 
+					{
+						 	Elements inner_elements = element.children();
+						 	
+						 	Team temp_team = new Team();
+						 	Boolean addedName = false;
+						 	
+						    for (Element element_inner : inner_elements)
+						    {
+						    	//This if statement covers the player roster
+						    	if((element_inner.className()).equals("wikitable list"))
+						    	{
+						    		Elements rows = element_inner.select("tr");
+						    		
+						    		for (int i = 0; i < rows.size(); i++) 
+						    		{ 
+						    	        Element row = rows.get(i);
+						    	        
+						    	        //Gets rid of the number in front
+						    	        temp_team.addTeamPlayer(row.text().substring(4));
+						    	       // System.out.println(row.text().substring(4));
+						    		}
+						    	}
+						    	
+						    	//If it is a team name and not the player roster
+						    	else if(!addedName)
+						    	{
+						    		//System.out.println(element_inner.text());
+						    		String team_name = element_inner.child(0).text();
+						    		temp_team.addTeamName(team_name);
+						    		addedName = true;
+						    		
+						    		//if(!StringUtils.isBlank(element_inner.className()))
+						    	}
+						    }
+						    
+						    
+						    all_teams.add(temp_team);
+						    team_hashmap.put(temp_team.getName(), temp_team);
+						    /*
+						    for(Team temp: all_teams)
+						    {
+						    	 System.out.println("Team Name: " + temp.getName());
+								    System.out.println("Roster: ");
+								    
+								    for(String player_name : temp.getPlayers())
+								    {
+								    	System.out.println(player_name);
+								    }
+								    
+								    System.out.println();
+						    }
+						   */
+						    
+					}
+				}
+
 				
 				//Sets the teams participating in the event
 				event_toreturn.setTeams(all_teams);
 				
-				//TODO: GROUP MATCHES
+				//TODO: GROUP MATCHES Fix broken messy code
 				//GROUP STAGE MATCHES
 				for(Element e: group_stages)
 				{
-					Element map_name_element = e.child(1).child(0).child(2).child(0).child(4);
+					
+					Element team_a_score = e.child(1);
+					Element team_b_score = e.child(2);
+					
+					String teamascore_string = team_a_score.ownText().trim();
+					String teambscore_string = team_b_score.ownText().trim();
+
+					//Ignores the row if the match was forfeited
+					if(teamascore_string.equals("W") || teamascore_string.equals("FF"))
+					{
+						continue;
+					}
+					
+					//TOO MESSY TO CONTINUE THE IF STATEMENT
+					//If both teams have a score of 0 then the match wasn't played
+					try
+					{
+						int a_score = Integer.parseInt(teamascore_string);
+						int b_score = Integer.parseInt(teambscore_string);
+						if(a_score == 0 && b_score == 0)
+						{
+							continue;
+						}
+					}
+					catch (NumberFormatException nfe)
+					{
+						continue;
+					}
+					
+					
+					Elements group_row_results = e.select(".matchlistslot");
+					String row_results = group_row_results.text();
+					
+					Element map_name_element;
+					
+					//Tries to get the map name, I came across two different types tables, hence the different methods to get it.
+					try
+					{
+						map_name_element = e.child(1).child(0).child(2).child(0).child(4);
+					}
+					catch(IndexOutOfBoundsException iobe)
+					{
+						map_name_element = e.child(1).child(0).child(1).child(0).child(4);
+					}
+					
 					String map_name = map_name_element.text();
 					String to_split = e.text();
 					String[] tokens = to_split.split(" +");
 					String team_a = tokens[0];
 					String team_b = tokens[tokens.length-1];
 					
-					//REMOVES TEAM NAMES FROM STRING
-					to_split = to_split.replace(tokens[0], "");
-					to_split = to_split.replace(tokens[tokens.length-1], "");
-					tokens = to_split.trim().split(" +");
-					int tokens_length = tokens.length;
-					
-					//TODO: parse match results, beginning and end of string, time[actually screw the time] and map details
-					int a_score = Integer.parseInt(tokens[0]);
-					int b_score = Integer.parseInt(tokens[tokens_length-1]);
+					int a_score = Integer.parseInt(teamascore_string);
+					int b_score = Integer.parseInt(teambscore_string);
 					
 					//Sets map details
 					Map temp_group_match = new Map();
@@ -302,234 +376,193 @@ public class CSGO_BET_ANALYZE {
 					all_games.add(temp_game);
 				}
 				
-				//TODO: Split teams into their respective groups, assumes that there are only 4 groups
-				int matches_per_group  = all_games.size() / info.size(); 
-				int inner = 0;
-				
-				for(int i = 0; i < info.size(); i++)
+				//If the tournament has no group matches, skip this
+				if(!all_games.isEmpty())
 				{
-					switch(i)
+					//Split teams into their respective groups, assumes that there are only 4 groups
+					int matches_per_group  = all_games.size() / info.size(); 
+					int inner = 0;
+					
+					for(int i = 0; i < info.size(); i++)
 					{
-					case 0: event_toreturn.setGroup("a", splitGroup(all_games, inner,matches_per_group));
-							inner+=matches_per_group;
-							break;
-					case 1: event_toreturn.setGroup("b", splitGroup(all_games, inner,matches_per_group));
-							inner+=matches_per_group;
-							break;
-					case 2: event_toreturn.setGroup("c", splitGroup(all_games, inner,matches_per_group));
-							inner+=matches_per_group;
-							break;
-					case 3: event_toreturn.setGroup("d", splitGroup(all_games, inner,matches_per_group));
-							break;
-					default: System.out.println("NO GROUPS?");
-							break;
+						switch(i)
+						{
+						case 0: event_toreturn.setGroup("a", splitGroup(all_games, inner,matches_per_group));
+								inner+=matches_per_group;
+								break;
+						case 1: event_toreturn.setGroup("b", splitGroup(all_games, inner,matches_per_group));
+								inner+=matches_per_group;
+								break;
+						case 2: event_toreturn.setGroup("c", splitGroup(all_games, inner,matches_per_group));
+								inner+=matches_per_group;
+								break;
+						case 3: event_toreturn.setGroup("d", splitGroup(all_games, inner,matches_per_group));
+								break;
+						default: System.out.println(event_name + " NO GROUPS?");
+								break;
+						}
 					}
-				}
-				
-				//Resets counter
-				inner = 0;
-				//TODO: FIGURE OUT HOW TO SPLIT MATCHES INTO THEIR RESPECTIVE GROUPS
-				for(int i = 0; i < info.size(); i++)
-				{
-					switch(i)
+					
+					//Resets counter
+					inner = 0;
+					//SPLITS MATCHES INTO THEIR RESPECTIVE GROUPS
+					for(int i = 0; i < info.size(); i++)
 					{
-					case 0: event_toreturn.addGames("group_a", splitGroupMatches(all_games, inner,matches_per_group));
-							inner+=matches_per_group;
-							break;
-					case 1: event_toreturn.addGames("group_b", splitGroupMatches(all_games, inner,matches_per_group));
-							inner+=matches_per_group;
-							break;
-					case 2: event_toreturn.addGames("group_c", splitGroupMatches(all_games, inner,matches_per_group));
-							inner+=matches_per_group;
-							break;
-					case 3: event_toreturn.addGames("group_d", splitGroupMatches(all_games, inner,matches_per_group));
-							break;
-					default: System.out.println("NO GROUPS?");
-							break;
+						switch(i)
+						{
+						case 0: event_toreturn.addGames("group_a", splitGroupMatches(all_games, inner,matches_per_group));
+								inner+=matches_per_group;
+								break;
+						case 1: event_toreturn.addGames("group_b", splitGroupMatches(all_games, inner,matches_per_group));
+								inner+=matches_per_group;
+								break;
+						case 2: event_toreturn.addGames("group_c", splitGroupMatches(all_games, inner,matches_per_group));
+								inner+=matches_per_group;
+								break;
+						case 3: event_toreturn.addGames("group_d", splitGroupMatches(all_games, inner,matches_per_group));
+								break;
+						default: System.out.println(event_name + " NO GROUPS?");
+								break;
+						}
 					}
 				}
 				
 				
 				//TODO: REWORK ALL THE CODE THAT PARSES BRACKET GAMES, CURRENT CODE IS TOO MESSY AND DOESN'T WORK RIGHT
 				//PRINT BRACKET GAME TEST
+				
+				//elements is ".bracket-game"
+				ArrayList<Game> bracket_games_array = new ArrayList<Game>();
 				for (Element element : elements) 
 				{
 				    //System.out.println(element.text());
 					Game temp_game = new Game();
+					temp_game.setStage("post_group");
 				    Elements inner_elements = element.children();
 				    
 				    Elements bracket_teamname_elements = element.select(".team-template-text");
-				    String name_a = bracket_teamname_elements.get(0).text();
-				    String name_b = bracket_teamname_elements.get(bracket_teamname_elements.size()-1).text();
-				    		
-				    for (Element element_inner : inner_elements)
+				    String whatiswrong = bracket_teamname_elements.text();
+				    
+				    //Skips the game if it is missing some info, I implemented this because there are dummy games in certain tables
+				    if(whatiswrong.isEmpty())
+				    {
+				    	continue;
+				    }
+				    String name_a = compareNames(bracket_teamname_elements.get(0).text(), all_teams);
+				    String name_b = compareNames(bracket_teamname_elements.get(bracket_teamname_elements.size()-1).text(), all_teams);
+				    
+				    if(name_a.isEmpty() || name_b.isEmpty())
+				    {
+				    	continue;
+				    }
+				    Elements bracket_scores = element.select(".bracket-score");
+				    if(bracket_scores.get(0).text().isEmpty() || !bracket_scores.get(0).text().matches(".*\\d.*"))
+				    {
+				    	continue;
+				    }
+				    
+				    
+				    String text = bracket_scores.get(0).text();
+				    int score_a = Integer.parseInt(bracket_scores.get(0).text());
+				    int score_b = Integer.parseInt(bracket_scores.get(bracket_scores.size()-1).text());
+				    
+				    Team team_a = team_hashmap.get(name_a);
+				    Team team_b = team_hashmap.get(name_b);
+				    temp_game.setTeam(team_a, "a");
+				    temp_game.setTeam(team_b, "b");
+				    
+				    temp_game.setScore(score_a, "a");
+				    temp_game.setScore(score_b, "b");
+				    //
+				    Elements game_details_block = element.select(".bracket-game-details");
+				    for(Element temp: game_details_block)
 				    {
 				    	
+				    	Elements game_details_div = temp.children();
+				    	//System.out.println(game_details_div.size());
 				    	
-				    	if(element_inner.className().equals("bracket-game-details"))
+				    	//What we want is in the third div
+				    	Element results_block = game_details_div.get(2);
+				    	
+				    	//System.out.println(results_block.children().size());
+				    	
+				    	//Each row represents a map that was played
+				    	Elements game_details_rows = results_block.children();
+				    	
+				    	//I'm not using a for each loop because the loop number will be used to determine whether the row is blank or not since every other row(odd rows) is a blank div
+				    	for(int i = 0; i < game_details_rows.size(); i++)
 				    	{
-				    		//System.out.println(element_inner.className());
-				    		Elements game_deets = element_inner.children();
-				    		
-				    		//Used to figure out what detail about the match it is on, only 1 and 2 are relevant
-				    		int counter = 0;
-				    		
-				    		for(Element details : game_deets)
+				    		Element row = game_details_rows.get(i);
+				    		//If the string has no numbers in it then the map wasn't played
+				    		String empty = row.text().replaceAll("\\s+", "");
+				    		if( (i == 0 || i%2 == 0) && row.text().matches(".*\\d.*"))
 				    		{
+				    			boolean has_numbers = row.text().matches(".*\\d.*");
+				    			//System.out.println(row.text());
+				    			String row_text = row.text();
+				    			String map_name = row.child(4).text();
+				    			row_text = row_text.replaceAll(map_name, "");
+				    			String[] tokens = row_text.split("\\s+");
 				    			
-				    			//System.out.println(details.className());
-				    			//System.out.println("CLASS NAME LENGTH: " + details.className().length());
-						    	
-						    	//Date and time
-						    	if(counter == 1)
-						    	{
-						    		//System.out.println("NUMBER: " + counter);
-						    		//TODO
-						    		//System.out.println("MATCH TIME: " + details.text());
-						    		temp_game.setTime(details.text());
-						    	}
-						    	
-						    	//Match details
-						    	else if(counter > 1 && details.className().length() == 0)
-						    	{
-						    		//System.out.println("NUMBER: " + counter);
-						    		//TODO:
-						    		//System.out.println("MATCH RESULTS: ");
-						    		
-						    		Elements match_details = details.children();
-						    		for(Element fine: match_details)
-						    		{
-						    			String to_split = fine.text();
-						    			to_split = to_split.replaceAll("\\s+", " ");
-							    		String delimiter = "[ ]+";
-							    		String[] tokens = to_split.split(delimiter);
-							    		int length = tokens.length;
-							    		
-
-							    		if(length != 1 && to_split.matches(".*\\d.*"))
-							    		{
-							    			String name_of_map_add = tokens[6];
-								    		//tokens[0] is the score of Team A, tokens[4] the score of Team B;
-								    		//tokens[6] onwards is the map name;
-								    		Map temp_map = new Map();
-								    		temp_map.setRounds(Integer.parseInt(tokens[0]), "a");
-								    		temp_map.setRounds(Integer.parseInt(tokens[4]), "b");
-								    		
-								    		for(int i = 7; i < length; i++)
-								    		{
-								    			name_of_map_add = name_of_map_add.concat(tokens[i]);
-								    		}
-								    		temp_map.setMapName(name_of_map_add);
-								    		
-								    		temp_game.setMap(temp_map);
-								    		
-								    		//TODO:
-							    			//System.out.println(to_split);
-							    		}
-						    		}
-						    	}
-						    	
-						    	counter++;
-				    		}
-				    		
-				    		//System.out.println();
-				    	}
-				    	
-				    	//Sets Teams and score of each team
-				    	else
-				    	{
-				    		//EXTRACTS SCORE AND TEAM NAME
-				    		String to_split = element_inner.text();
-				    		String delimiter = "[ ]+";
-				    		String[] tokens = to_split.split(delimiter);
-				    		int lengthofarray = tokens.length;
-				    		String team_name = tokens[0];
-				    		for(int i = 1; i < lengthofarray-1; i++)
-				    		{
-				    			team_name = team_name.concat(" " + tokens[i]);
-				    		}
-				    		
-				    		//SETS TEAM A DETAILS
-				    		if(!temp_game.teamABeenSet())
-				    		{
-				    			for(int i = 0; i < all_teams.size(); i++)
+				    			if(!tokens[0].matches(".*\\d.*"))
 				    			{
-				    				String name_of_team_storage = (all_teams.get(i)).getName();
+				    				continue;
+				    			}
+				    			int a_score_string = Integer.parseInt(tokens[0]);
+				    			
+				    			int b_score_string = 0;
+				    			
+				    			
+				    			//Older pages didn't have the score per side eg. 12 CT + 4 T = 16, therefore there are less tokens in the string (else branch)
+				    			if(tokens.length > 2)
+				    			{
+				    				try
+				    				{
+				    					b_score_string = Integer.parseInt(tokens[tokens.length -2]);
+				    				}
+				    				catch (NumberFormatException e)
+				    				{
+				    					continue;
+				    				}
+				    			}
+				    			else
+				    			{
+				    				try
+				    				{
+				    					b_score_string = Integer.parseInt(tokens[tokens.length -1]);
+				    				}
+				    				catch (NumberFormatException e)
+				    				{
+				    					continue;
+				    				}
+				    			}
 				    				
-				    				//Could be displaying the team names differently, eg. Complexity and Complexity Gaming, currently doesn't account for team intials
-				    				if (	name_of_team_storage.equals(team_name)	|| team_name.contains(name_of_team_storage))
-				    				{
-				    					temp_game.setTeam(all_teams.get(i), "a");
-						    			temp_game.setScore(	Integer.parseInt(tokens[lengthofarray-1]), "a");
-						    			break;
-				    				}
-				    			}
+				    			Map temp_map = new Map();
+				    			temp_map.setMapName(map_name);
+				    			temp_map.setRounds(a_score_string, "a");
+				    			temp_map.setRounds(b_score_string, "b");
+				    			temp_map.setTeam(name_a, "a");
+				    			temp_map.setTeam(name_b, "b");
 				    			
+				    			temp_game.setMap(temp_map);
+				    			//System.out.println();
 				    		}
-				    		
-				    		//SETS TEAM B DETAILS
-				    		else
-				    		{
-				    			for(int i = 0; i < all_teams.size(); i++)
-				    			{
-				    				String name_of_team_storage = (all_teams.get(i)).getName();
-				    				if (	name_of_team_storage.equals(team_name)	|| team_name.contains(name_of_team_storage) || name_of_team_storage.contains(team_name))
-				    				{
-				    					//Updates the team name, since events are parsed in chronological order, the name will always be the latest one
-				    					all_teams.get(i).addTeamName(team_name);
-				    					temp_game.setTeam(all_teams.get(i), "b");
-						    			temp_game.setScore(	Integer.parseInt(tokens[lengthofarray-1]), "b");
-						    			break;
-				    				}
-				    			}
-				    		}
-				    		
-				    		
-					    	//System.out.println(element_inner.className());
-					    	//System.out.println(element_inner.text());
 				    	}
 				    }
-				   
-				    int no_of_maps = temp_game.numberofMaps();
-				    int j = 1;
-				    for(int i = 0; i < no_of_maps; i++)
-				    {
-				    	switch(j)
-				    	{
-				    	case 1:	temp_game.getMap(1).setTeam(temp_game.getTeamName("a"), "a");
-				    			temp_game.getMap(1).setTeam(temp_game.getTeamName("b"), "b");
-				    			break;
-				    	case 2: temp_game.getMap(2).setTeam(temp_game.getTeamName("a"), "a");
-				    			temp_game.getMap(2).setTeam(temp_game.getTeamName("b"), "b");
-				    			break;
-				    	case 3: temp_game.getMap(3).setTeam(temp_game.getTeamName("a"), "a");
-				    			temp_game.getMap(3).setTeam(temp_game.getTeamName("b"), "b");
-				    			break;
-				    	case 4: temp_game.getMap(4).setTeam(temp_game.getTeamName("a"), "a");
-				    			temp_game.getMap(4).setTeam(temp_game.getTeamName("b"), "b");
-				    			break;
-				    	case 5: temp_game.getMap(5).setTeam(temp_game.getTeamName("a"), "a");
-				    			temp_game.getMap(5).setTeam(temp_game.getTeamName("b"), "b");
-				    			break;
-				    	}
-				    	
-				    	j++;
-				    }
-				    temp_game.setStage("post_group");
 				    all_games.add(temp_game);
-				   
+	    			bracket_games_array.add(temp_game);
 				}
 				
-				for(int i = inner; i < all_games.size(); i++)
-				{
-					
-				}
-
-				System.out.println();
+				event_toreturn.addGames("post_group", bracket_games_array);
+				event_toreturn.setAllGames(all_games);
+				event_toreturn.setPlayed();
+				//System.out.println();
 				return event_toreturn;
 			}
 			else
+			{
 				System.out.println(event_name + " NOT PLAYED YET!");
+			}
 			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
